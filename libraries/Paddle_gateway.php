@@ -2,7 +2,7 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Two_checkout_gateway extends App_gateway
+class Paddle_gateway extends App_gateway
 {
     public function __construct()
     {
@@ -15,13 +15,13 @@ class Two_checkout_gateway extends App_gateway
          * Gateway unique id
          * The ID must be alpha/alphanumeric
          */
-        $this->setId('two_checkout');
+        $this->setId('paddle');
 
         /**
          * REQUIRED
          * Gateway name
          */
-        $this->setName('2Checkout');
+        $this->setName('Paddle');
 
         /**
          * Add gateway settings
@@ -29,14 +29,19 @@ class Two_checkout_gateway extends App_gateway
         $this->setSettings(
             [
                 [
-                    'name'      => 'merchant_code',
+                    'name'      => 'paddle_vendor_id',
                     'encrypted' => true,
-                    'label'     => 'two_checkout_merchant_code',
+                    'label'     => 'paddle_vendor_id',
                 ],
                 [
-                    'name'      => 'secret_key',
+                    'name'      => 'paddle_public_key',
+                    'type'      => 'textarea',
+                    'label'     => 'paddle_public_key',
+                ],
+                [
+                    'name'      => 'paddle_auth_code',
                     'encrypted' => true,
-                    'label'     => 'two_checkout_secret_Key',
+                    'label'     => 'paddle_auth_code',
                 ],
                 [
                     'name'          => 'description',
@@ -67,8 +72,8 @@ class Two_checkout_gateway extends App_gateway
      */
     public function process_payment($data)
     {
-        $this->ci->session->set_userdata(['two_checkout_total' => $data['amount']]);
-        redirect(site_url('gateways/two_checkout/payment/' . $data['invoice']->id . '/' . $data['invoice']->hash));
+        $this->ci->session->set_userdata(['paddle_total' => $data['amount']]);
+        redirect(site_url('paddle/payment/' . $data['invoice']->id . '/' . $data['invoice']->hash));
     }
 
 
@@ -77,13 +82,23 @@ class Two_checkout_gateway extends App_gateway
         return str_replace('{invoice_number}', format_invoice_number($id),  $this->getSetting('description'));
     }
 
-    public function merchant_code()
+    public function vendor_id()
     {
-        return $this->decryptSetting('merchant_code');
+        return $this->decryptSetting('paddle_vendor_id');
     }
 
-    public function secret_key()
+    public function public_key()
     {
-        return $this->decryptSetting('secret_key');
+        return $this->getSetting('paddle_public_key');
+    }
+    
+    public function auth_code()
+    {
+        return $this->decryptSetting('paddle_auth_code');
+    }
+
+    public function webhook($id,$hash)
+    {
+        return site_url('paddle/gateways/paddle_ipn/notify/'. $id .'/' . $hash);
     }
 }
